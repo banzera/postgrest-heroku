@@ -10,6 +10,7 @@ config_settings=(
   db-pool
   server-host
   server-port
+  server-unix-socket
   server-proxy-uri
   jwt-secret
   jwt-aud
