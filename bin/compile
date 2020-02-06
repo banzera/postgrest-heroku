@@ -99,7 +99,7 @@ cp $BP_DIR/env-to-config $BUILD_DIR
 chmod +x $BUILD_DIR/env-to-config
 
 echo "-----> Processing the API docs"
-for FILE in `ls /app/api/*.erb`; do
+for FILE in `ls $BUILD_DIR/api/*.erb`; do
   erb $FILE ${FILE#.erb}
 done
 
