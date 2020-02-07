@@ -100,7 +100,8 @@ chmod +x $BUILD_DIR/env-to-config
 
 echo "-----> Processing the API docs"
 for FILE in `ls $BUILD_DIR/api/*.erb`; do
-  erb $FILE > ${FILE#.erb}
+  echo "$FILE > ${FILE%.erb}"
+  erb $FILE > ${FILE%.erb} && rm $FILE
 done
 
 if [ -f $BUILD_DIR/Procfile ]; then
