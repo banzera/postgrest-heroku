@@ -2,6 +2,36 @@
 
 CONF_PATH="$2"
 
+echo "# postgrest.conf" > $CONF_PATH
+
+parse_db_url() {
+  # extract the protocol
+  export proto="`echo $DATABASE_URL | grep '://' | sed -e's,^\(.*://\).*,\1,g'`"
+  # remove the protocol
+  export url=`echo $DATABASE_URL | sed -e s,$proto,,g`
+
+  # extract the user and password (if any)
+  userpass="`echo $url | grep @ | cut -d@ -f1`"
+  export pass=`echo $userpass | grep : | cut -d: -f2`
+  if [ -n "$pass" ]; then
+      export user=`echo $userpass | grep : | cut -d: -f1`
+  else
+      export user=$userpass
+  fi
+
+  # extract the host -- updated
+  hostport=`echo $url | sed -e s,$userpass@,,g | cut -d/ -f1`
+  export port=`echo $hostport | grep : | cut -d: -f2`
+  if [ -n "$port" ]; then
+      host=`echo $hostport | grep : | cut -d: -f1`
+  else
+      host=$hostport
+  fi
+
+  # extract the path (if any)
+  export path="`echo $url | grep / | cut -d/ -f2-`"
+}
+
 #available config options
 config_settings=(
   db-uri
@@ -20,7 +50,22 @@ config_settings=(
   role-claim-key
 )
 
+# Get DATABASE_URL explicitly, as it is populated by Heroku automatically
+if [ "$DATABASE_URL" ]; then
+  parse_db_url
+
+  echo "db-uri=\"${DATABASE_URL}\"" >> $CONF_PATH
+  config_settings=("${config_settings[@]/db-uri}")
+
+  if [ -z $DB_ANON_ROLE ]; then
+    # use user from DATABASE_URL for anon if not explicitly set
+    echo "db-anon-role=\"${user}\"" >> $CONF_PATH
+    config_settings=("${config_settings[@]/db-anon-role}")
+  fi
+fi
+
 for conf in "${config_settings[@]}"; do
+  [[ -z $conf ]] && continue  # skip blanked array entries
   var=`echo ${conf^^} | tr - _`
   val="${!var:-}"
   if [ "$val" ]; then
@@ -32,12 +77,6 @@ for conf in "${config_settings[@]}"; do
     fi
   fi
 done
-
-# Get DATABASE_URL explicitly, as it is populated by Heroku automatically
-if [ "$DATABASE_URL" ]; then
-  echo "db-uri=\"${DATABASE_URL}\"" >> $CONF_PATH
-  echo "db-anon-role=\"${DATABASE_URL:11:14}\"" >> $CONF_PATH
-fi
 
 # Bind to correct host and port for Heroku
 echo "server-host=\"0.0.0.0\"" >> $CONF_PATH
