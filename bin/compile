@@ -98,12 +98,6 @@ echo "-----> Copying the config file builder"
 cp $BP_DIR/env-to-config $BUILD_DIR
 chmod +x $BUILD_DIR/env-to-config
 
-echo "-----> Processing the API docs"
-for FILE in `ls $BUILD_DIR/api/*.erb`; do
-  echo "$FILE > ${FILE%.erb}"
-  erb $FILE > ${FILE%.erb} && rm $FILE
-done
-
 if [ -f $BUILD_DIR/Procfile ]; then
   echo "-----> Custom Procfile found"
 else
